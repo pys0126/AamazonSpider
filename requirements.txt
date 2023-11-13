@@ -1,0 +1,9 @@
+lxml
+tqdm
+pyyaml
+pymysql
+requests
+sqlalchemy
+sqlacodegen
+DrissionPage
+fake_useragent
