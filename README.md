@@ -46,9 +46,7 @@ SpiderConfig:
   # 是否开启代理
   proxies: true
   # 代理URL
-  proxies_url: "http://127.0.0.1:8889"
-
-
+  proxies_url: http://127.0.0.1:8889
 ```
 
 ## 运行
