@@ -121,9 +121,9 @@ class SpiderLogic:
         card_list: list[Element] = element.xpath('//div[@class="a-section a-spacing-base"]')
         return card_list
 
-    def parse_and_save(self, element: Element) -> Union[dict, None]:
+    def parse_product(self, element: Element) -> Union[dict, None]:
         """
-        解析商品，入库数据
+        解析商品
         :param element: 商品板块元素
         :return: 商品字典，或者None
         """
