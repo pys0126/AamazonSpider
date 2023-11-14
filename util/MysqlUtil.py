@@ -1,5 +1,5 @@
+from model import BaseModel
 from sqlalchemy import create_engine
-from model.BaseModel import BaseModel
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm.session import Session

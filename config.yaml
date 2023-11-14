@@ -22,7 +22,7 @@ SpiderConfig:
   # 爬取数量（条）
   spider_size: 1000
   # 爬虫线程数，网速快可以设置多一点
-  spider_worker: 8
+  spider_worker: 10
   # 爬取URL模板
   search_url_template: https://www.amazon.com/s?k={}
   # 主页URL
@@ -30,5 +30,5 @@ SpiderConfig:
   # 是否开启代理
   proxies: true
   # 代理URL
-  proxies_url: "http://127.0.0.1:8889"
+  proxies_url: http://127.0.0.1:8889
 

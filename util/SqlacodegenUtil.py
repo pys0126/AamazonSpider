@@ -15,6 +15,6 @@ def gen_model(database_name: str, table_name: str, output_path: str, host: str =
     :return:
     """
     cmd: str = f"sqlacodegen --tables {table_name} " \
-               f"'mysql+pymysql://{username}:{password}@{host}:{port}/{database_name}' > " \
+               f"mysql+pymysql://{username}:{password}@{host}:{port}/{database_name} > " \
                f"{output_path}"
     os.system(cmd)

@@ -1,13 +1,22 @@
 # AmazonSpider - 亚马逊采集
 
-基于 **[DrissionPage](https://gitee.com/g1879/DrissionPage) + [SQLAlchemy](https://www.sqlalchemy.org/)** 的多线程爬虫
+基于 **[DrissionPage](https://gitee.com/g1879/DrissionPage) + [SQLAlchemy](https://www.sqlalchemy.org/)** 的多线程爬虫（需要Chrome浏览器）
+
+## 采集内容
+
+- 商品名称
+- 商品价格
+- 商品链接
+- 商品图片链接
+- 商品详情
 
 ## 功能
 
 - 可以指定关键词爬取商品信息
 - 可以指定线程数量
 - 可以指定代理
-- 可以使用SQLAlchemy ORM框架操作数据库，详情查看`model`包
+- 使用`sqlacodegen`通过数据表生成对象
+- 使用`SQLAlchemy ORM`框架操作数据库，详情查看`model`包
 
 ## 配置
 
@@ -51,5 +60,7 @@ SpiderConfig:
 
 ## 运行
 
-- 安装依赖`pip install -r requirements.txt`
+- 安装依赖 `pip install -r requirements.txt`
+- 通过数据表生成对象 `python sql2object.py`
+- 通过对象生成数据表 `python object2sql.py`
 - 爬虫，启动！`python main.py`

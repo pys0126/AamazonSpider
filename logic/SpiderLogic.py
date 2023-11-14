@@ -1,5 +1,4 @@
 from logic.ProductLogic import insert_product, query_product_by_name, count_product
-from logic.CategoryLogic import category_id_by_name
 from DrissionPage import ChromiumPage, SessionPage
 from concurrent.futures import ThreadPoolExecutor
 from config.SpiderConfig import SpiderConfig
@@ -7,11 +6,9 @@ from typing import Optional, Iterator, Union
 from requests import Session, Response
 from util.StringUtil import urldecode
 from fake_useragent import UserAgent
-from util.RequestsUtil import fetch
 from lxml.html import Element
 from lxml import etree
 import json
-import time
 
 
 class SpiderLogic:
@@ -41,7 +38,7 @@ class SpiderLogic:
         self.cookie = chromium_page.get_cookies(all_domains=True, all_info=True, as_dict=True)  # 设置Cookie
         # self.user_agent = chromium_page.user_agent  # 设置UA
         chromium_page.quit()  # 关闭浏览器
-
+        # 设置requests请求头
         self.session_page.set.cookies(self.cookie)
         self.session_page.set.user_agent(self.user_agent)
         if SpiderConfig.proxies:
@@ -65,7 +62,7 @@ class SpiderLogic:
         """
         # 请求URL
         response: Response = self.simple_fetch(url=url)
-        if response.status_code == 200:
+        if response and response.status_code == 200:
             return response.text
         else:
             chromium_page: ChromiumPage = ChromiumPage()
@@ -132,7 +129,7 @@ class SpiderLogic:
         """
         # 商品名称
         product_name: str = element.xpath('.//span[@class="a-size-base-plus a-color-base a-text-normal"]/text()')[0]
-        if not query_product_by_name(name=product_name):  # 如果库中不存在此商品
+        if not query_product_by_name(title=product_name):  # 如果库中不存在此商品
             # 商品单价
             unit_price_origin: list = element.xpath('.//span[@class="a-price"]/span[@class="a-offscreen"]/text()')
             # 如果找到商品单价
@@ -147,12 +144,7 @@ class SpiderLogic:
                 # 请求详情页
                 info_response: Union[Response, None] = self.simple_fetch(url=info_url)
                 if not info_response:
-                    # 创建Chromium
-                    chromium_page: ChromiumPage = ChromiumPage()
-                    chromium_page.get(url=info_url)  # 请求亚马逊主页
-                    chromium_page.set.load_strategy.eager()  # 设置加载DOM就停止
-                    info_html: str = chromium_page.html
-                    chromium_page.quit()  # 关闭浏览器
+                    return None
                 else:
                     info_html: str = info_response.text
                 # 详情页Element对象
@@ -165,26 +157,32 @@ class SpiderLogic:
                     # 将图片详情转为字典
                     info_data: dict = json.loads(
                         info_data_str.split("'colorImages': ")[-1].split(",\n")[0].replace(" ", "").replace("'", "\""))
-                    # 创建一个存储图片ID的列表
-                    image_id_list: list = []
+                    # 创建一个存储图片URL的列表
+                    image_list: list = []
                     # 遍历所有图片信息，获取图片URL
                     for image_dict in info_data.get("initial"):
                         image_url: Union[str, None] = image_dict.get("hiRes")
                         # 如果hiRes有图片信息
                         if image_url:
-                            image_id_list.append(image_url)
-                except (TypeError, IndexError) as e:  # 如果出错，则选择缩略图作为主图和详情图
-                    image_id_list: list = [thumbnail_img]
-                # 获取当前的搜索内容
-                category_text: str = urldecode(text=info_url).split("keywords=")[-1].split("&")[0].replace("+", " ")
-                # 根据搜索内容查询类别ID
-                category_id: int = category_id_by_name(name=category_text)
+                            image_list.append(image_url)
+                except (TypeError, IndexError) as _:  # 如果出错，则选择缩略图作为主图和详情图
+                    image_list: list = [thumbnail_img]
+                # 获取当前的搜索关键词
+                keyword: str = info_url.split("keywords=")[-1].split("&")[0].replace("+", " ")
+                # 获取商品信息
+                description_element: Union[Element, None] = info_element.xpath('//table[@id="productDetails_detailBullets_sections1"]')
+                # 如果商品信息不存在则设置为空字符串
+                if description_element:
+                    description: str = etree.tostring(description_element[0])
+                else:
+                    description: str = ""
                 product_data: dict = {
-                    "name": product_name,  # 商品名称
-                    "photos": image_id_list,  # 主图URL列表
-                    "category_id": category_id,  # 类别ID
-                    "thumbnail_img": thumbnail_img,  # 商品缩略图URL
-                    "unit_price": unit_price  # 单价
+                    "title": product_name,  # 商品名称
+                    "images": image_list,  # 主图URL列表
+                    "keyword": keyword,  # 类别ID
+                    "price": unit_price,  # 单价
+                    "url": info_url,  # 详情页URL
+                    "description": description  # 商品详情
                 }
                 return product_data
 
@@ -197,11 +195,19 @@ class SpiderLogic:
         for page_url in all_page_url:
             if page_url:
                 print("当前页面：", page_url)
-                page_response: Response = self.simple_fetch(url=page_url)
+                page_response: Union[Response, None] = self.simple_fetch(url=page_url)
                 if not page_response:
-                    continue
+                    # 创建Chromium
+                    chromium_page: ChromiumPage = ChromiumPage()
+                    chromium_page.get(url=page_url)  # 请求
+                    chromium_page.set.load_strategy.eager()  # 设置加载DOM就停止
+                    self.cookie = chromium_page.get_cookies(all_domains=True, all_info=True, as_dict=True)  # 设置Cookie
+                    page_html: str = chromium_page.html
+                    chromium_page.quit()
+                else:
+                    page_html: str = page_response.text
                 # 获取所有商品板块元素
-                product_card_list: list[Element] = self.product_card_list(html=page_response.text)
+                product_card_list: list[Element] = self.product_card_list(html=page_html)
                 # 多线程爬取
                 with ThreadPoolExecutor(max_workers=SpiderConfig.spider_worker) as executor:
                     results: Iterator[Union[dict, None]] = executor.map(self.parse_and_save, product_card_list)
@@ -210,7 +216,7 @@ class SpiderLogic:
                         try:
                             # 存入商品表
                             if insert_product(**result):
-                                print("商品", result.get("name"), "已入库")
+                                print("商品", result.get("title"), "已入库")
                         except TimeoutError as e:
                             print(e)
                             continue
@@ -220,7 +226,7 @@ class SpiderLogic:
         while True:
             search_html_list: list[Union[str, None]] = self.get_all_search_page()
             search_html_list = [search_html for search_html in search_html_list if search_html]
-            print("类别数量：", len(search_html_list))
+            print("关键词数量：", len(search_html_list))
             for search_html in search_html_list:
                 self.controls(search_html=search_html)
                 self.totality = count_product()

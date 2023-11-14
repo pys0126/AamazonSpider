@@ -1,5 +1,4 @@
 from config import YAML_CONTENT
-from logic.CategoryLogic import category_name_list
 
 # 获取爬虫配置
 SPIDER_CONFIG: dict = YAML_CONTENT.get("SpiderConfig")
@@ -9,7 +8,7 @@ class SpiderConfig:
     """
     爬虫配置
     """
-    search_list: list[str] = category_name_list()  # 搜索关键词列表
+    search_list: list[str] = SPIDER_CONFIG.get("keywords")  # 搜索关键词列表
     spider_worker: int = int(SPIDER_CONFIG.get("spider_worker"))  # 爬虫线程数
     spider_size: int = int(SPIDER_CONFIG.get("spider_size"))  # 爬取数量
     search_url_template: str = SPIDER_CONFIG.get("search_url_template")  # 爬取URL模板
@@ -35,6 +34,6 @@ class SpiderConfig:
         :return: URL列表
         """
         spider_url_list: list = []
-        for category_name in category_name_list():
-            spider_url_list.append(SpiderConfig.search_url_template.format(category_name.replace("&", "and")))
+        for keyword in self.search_list:
+            spider_url_list.append(SpiderConfig.search_url_template.format(keyword.replace(" ", "")))
         return spider_url_list
