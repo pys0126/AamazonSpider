@@ -1,6 +1,6 @@
 # AmazonSpider - 亚马逊采集
 
-基于 **[DrissionPage](https://gitee.com/g1879/DrissionPage) + [SQLAlchemy](https://www.sqlalchemy.org/)** 的多线程爬虫（需要Chrome浏览器）
+基于 **[DrissionPage](https://gitee.com/g1879/DrissionPage) + [SQLAlchemy](https://www.sqlalchemy.org/) + [lxml](https://pypi.org/project/lxml/)** 的多线程爬虫（需要Chrome浏览器）
 
 ## 采集内容
 
